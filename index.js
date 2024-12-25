@@ -55,41 +55,59 @@ async function run() {
         app.get('/tutors/:id', async (req, res) => {
             const id = req.params.id;
             try {
-              const query = { _id: new ObjectId(id) };
-              const result = await tutorCollection.findOne(query);
-              res.send(result);
+                const query = { _id: new ObjectId(id) };
+                const result = await tutorCollection.findOne(query);
+                res.send(result);
             } catch (error) {
-              console.error(error);
-              res.status(500).send({ message: 'Invalid ID or Database Error' });
-              }
-            });
+                console.error(error);
+                res.status(500).send({ message: 'Invalid ID or Database Error' });
+            }
+        });
 
         app.get('/tutors/email/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             try {
-              const result = await tutorCollection.find(query).toArray();
-              res.send(result);
+                const result = await tutorCollection.find(query).toArray();
+                res.send(result);
             } catch (error) {
-              console.error(error);
-              res.status(500).send({ message: 'Error fetching data' });
+                console.error(error);
+                res.status(500).send({ message: 'Error fetching data' });
             }
-          });
+        });
 
 
-          app.delete('/tutors/:id', async (req, res) => {
+        app.delete('/tutors/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const result = await tutorCollection.deleteOne(query);
             res.send(result);
-          })
-        
+        })
+
 
         app.get('/category', async (req, res) => {
             const cursor = categoryCollection.find();
             const result = await cursor.toArray();
             res.send(result)
         })
+
+        app.put('/tutors/:id', async (req, res) => {
+            const id = req.params.id; // Corrected 'res' to 'req'
+            const newTutor = req.body;
+            const updated = {
+                $set: newTutor,
+            };
+            const query = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            try {
+                const result = await tutorCollection.updateOne(query, updated, options);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: 'Error updating the tutorial' });
+            }
+        });
+
 
 
 
@@ -100,7 +118,7 @@ async function run() {
 
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
