@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -8,9 +10,29 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
+
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token;
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' })
+        }
+        req.user = decoded;
+        next();
+    })
+   
+
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rt6v2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -34,6 +56,32 @@ async function run() {
         const tutorCollection = client.db('tutorhive').collection('tutors');
         const categoryCollection = client.db('tutorhive').collection('category');
         const bookTutorCollection = client.db('tutorhive').collection('bookTutor');
+
+
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '5h'
+            });
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+                })
+                .send({ success: true })
+        });
+
+        app.post('/logout', (req, res) => {
+            res
+                .clearCookie('token', {
+                    maxAge: 0,
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+                })
+                .send({ success: true })
+        })
 
 
 
@@ -82,26 +130,42 @@ async function run() {
             }
         });
 
-        app.get('/book-tutors/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email: email };
+        app.get('/book-tutors', verifyToken, async (req, res) => {
+            const emailFromQuery = req.query.email;  // Get email from query string
+            const emailFromToken = req.user.email;  // Get email from the JWT token
+        
+            // Check if the email in the query string matches the email in the token
+            if (emailFromQuery !== emailFromToken) {
+                return res.status(403).send({ message: 'Forbidden access: email mismatch' });
+            }
+        
+            const query = { email: emailFromQuery }; // Query the database with the email from the query string
+        
             try {
                 const result = await bookTutorCollection.find(query).toArray();
-                res.send(result);
+                res.send(result);  // Send the result back to the client
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ message: 'Error fetching data' });
             }
         });
-        app.get('/tutors/email/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email: email };
+        
+        app.get('/tutors/email/:email', verifyToken, async (req, res) => {
+            const emailFromParam = req.params.email; // Get the email from the route params
+            const emailFromToken = req.user.email; // Get the email from the token payload
+        
+            // Ensure that the email from the route matches the one in the token
+            if (emailFromParam !== emailFromToken) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+        
             try {
+                const query = { email: emailFromParam };
                 const result = await tutorCollection.find(query).toArray();
                 res.send(result);
             } catch (error) {
                 console.error(error);
-                res.status(500).send({ message: 'Error fetching data' });
+                res.status(500).send({ message: 'Error fetching tutor data' });
             }
         });
 
@@ -139,9 +203,9 @@ async function run() {
 
 
 
-      
 
-      
+
+
 
 
 
@@ -166,6 +230,6 @@ app.get('/', (req, res) => {
 })
 
 app.listen(port, () => {
-    console.log(`TutorHive is running on port: ${port}`);
+    console.log(`TutorHive is running on port: ${port}`);
 
 })
