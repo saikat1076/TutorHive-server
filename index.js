@@ -7,6 +7,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 
+
 app.use(cors());
 app.use(express.json());
 
@@ -28,14 +29,14 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const tutorCollection = client.db('tutorhive').collection('tutors');
         const categoryCollection = client.db('tutorhive').collection('category');
         const bookTutorCollection = client.db('tutorhive').collection('bookTutor');
-        
-        
-        
+
+
+
         app.post('/tutors', async (req, res) => {
             const newTutor = req.body;
             console.log(newTutor);
@@ -132,13 +133,15 @@ async function run() {
                 res.send(result);
             } catch (error) {
                 console.error(error);
-                res.status(500).send({ message: 'Error updating the tutorial' });
-            }
+                res.status(500).send({ message: 'Error updating the tutorial' });
+            }
         });
 
-       
-          
-          
+
+
+      
+
+      
 
 
 
