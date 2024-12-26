@@ -32,12 +32,29 @@ async function run() {
 
         const tutorCollection = client.db('tutorhive').collection('tutors');
         const categoryCollection = client.db('tutorhive').collection('category');
+        const bookTutorCollection = client.db('tutorhive').collection('bookTutor');
+        
+        
+        
         app.post('/tutors', async (req, res) => {
             const newTutor = req.body;
             console.log(newTutor);
             const result = await tutorCollection.insertOne(newTutor);
             res.send(result);
 
+        })
+        app.post('/book-tutors', async (req, res) => {
+            const bookTutor = req.body;
+            console.log(bookTutor);
+            const result = await bookTutorCollection.insertOne(bookTutor);
+            res.send(result);
+
+        })
+
+        app.get('/book-tutors', async (req, res) => {
+            const cursor = bookTutorCollection.find();
+            const result = await cursor.toArray();
+            res.send(result)
         })
 
         app.get('/tutors', async (req, res) => {
@@ -108,7 +125,9 @@ async function run() {
             }
         });
 
-
+       
+          
+          
 
 
 
