@@ -11,7 +11,12 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        'http://localhost:5173',
+        'https://tutorhive-e3caf.web.app',
+        'https://tutorhive-e3caf.firebaseapp.com'
+
+    ],
     credentials: true
 }));
 app.use(express.json());
@@ -151,10 +156,9 @@ async function run() {
         });
         
         app.get('/tutors/email/:email', verifyToken, async (req, res) => {
-            const emailFromParam = req.params.email; // Get the email from the route params
-            const emailFromToken = req.user.email; // Get the email from the token payload
-        
-            // Ensure that the email from the route matches the one in the token
+            const emailFromParam = req.params.email;
+            const emailFromToken = req.user.email; 
+    
             if (emailFromParam !== emailFromToken) {
                 return res.status(403).send({ message: 'Forbidden access' });
             }
@@ -185,7 +189,7 @@ async function run() {
         })
 
         app.put('/tutors/:id', async (req, res) => {
-            const id = req.params.id; // Corrected 'res' to 'req'
+            const id = req.params.id; 
             const newTutor = req.body;
             const updated = {
                 $set: newTutor,
