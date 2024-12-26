@@ -81,6 +81,17 @@ async function run() {
             }
         });
 
+        app.get('/book-tutors/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            try {
+                const result = await bookTutorCollection.find(query).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: 'Error fetching data' });
+            }
+        });
         app.get('/tutors/email/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
