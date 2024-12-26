@@ -131,15 +131,15 @@ async function run() {
         });
 
         app.get('/book-tutors', verifyToken, async (req, res) => {
-            const emailFromQuery = req.query.email;  // Get email from query string
-            const emailFromToken = req.user.email;  // Get email from the JWT token
+            const emailFromQuery = req.query.email;  
+            const emailFromToken = req.user.email;  
         
-            // Check if the email in the query string matches the email in the token
+            
             if (emailFromQuery !== emailFromToken) {
                 return res.status(403).send({ message: 'Forbidden access: email mismatch' });
             }
         
-            const query = { email: emailFromQuery }; // Query the database with the email from the query string
+            const query = { email: emailFromQuery }; 
         
             try {
                 const result = await bookTutorCollection.find(query).toArray();
