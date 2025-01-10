@@ -14,11 +14,11 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'https://tutorhive-e3caf.web.app',
-        'https://tutorhive-e3caf.firebaseapp.com'
-
+        'https://tutorhive-e3caf.firebaseapp.com',
     ],
-    credentials: true
+    credentials: true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -63,7 +63,8 @@ async function run() {
         const bookTutorCollection = client.db('tutorhive').collection('bookTutor');
 
 
-        app.post('/jwt', (req, res) => {
+        app.post("/jwt", async (req, res) => {
+
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
                 expiresIn: '5h'
@@ -72,10 +73,10 @@ async function run() {
                 .cookie('token', token, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
-                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
                 })
                 .send({ success: true })
-        });
+          });
 
         app.post('/logout', (req, res) => {
             res
@@ -87,7 +88,7 @@ async function run() {
                 })
                 .send({ success: true })
         })
-
+      
 
 
         app.post('/tutors', async (req, res) => {
@@ -112,16 +113,42 @@ async function run() {
         })
 
         app.get('/tutors', async (req, res) => {
-            const category = req.query.category;
-
-            if (category) {
+            try {
+              const countQuery = req.query.count;
+              const category = req.query.category;
+          
+              // Case 1: If the 'count' query parameter is provided, return statistics
+              if (countQuery) {
+                const [documentCount, distinctCategory] = await Promise.all([
+                  tutorCollection.countDocuments(), // মোট ডকুমেন্ট সংখ্যা
+                  tutorCollection.aggregate([
+                    { $group: { _id: "$category" } },
+                    { $count: "distinctCount" }
+                  ]).toArray()
+                ]);
+          
+                return res.send({
+                  totalDocuments: documentCount.toString(),
+                  distinctCategoryCount: distinctCategory.length > 0 ? distinctCategory[0].distinctCount : 0,
+                });
+              }
+          
+              // Case 2: If the 'category' query parameter is provided, return tutors filtered by category
+              if (category) {
                 const tutors = await tutorCollection.find({ category }).toArray();
-                res.send(tutors);
-            } else {
-                const tutors = await tutorCollection.find().toArray();
-                res.send(tutors);
-            }
-        });
+                return res.send(tutors);
+              }
+          
+              // Case 3: If no query parameters, return all tutors
+              const allTutors = await tutorCollection.find().toArray();
+              return res.send(allTutors);
+          
+            } catch (error) {
+              console.error("Error fetching data:", error);
+              res.status(500).send("Internal Server Error");
+            }
+          });
+          
 
         app.get('/tutors/:id', async (req, res) => {
             const id = req.params.id;
@@ -237,3 +264,4 @@ app.listen(port, () => {
     console.log(`TutorHive is running on port: ${port}`);
 
 })
+ 
