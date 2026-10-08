@@ -13,7 +13,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'https://tutorhive-e3caf.web.app',
+        'https://tutorhive.surge.sh',
         'https://tutorhive-e3caf.firebaseapp.com',
     ],
     credentials: true
